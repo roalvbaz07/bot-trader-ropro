@@ -1,1 +1,4 @@
 project_id = "qpjhrolsklgtjeollykq"
+
+[functions.alpaca-bars]
+verify_jwt = false
