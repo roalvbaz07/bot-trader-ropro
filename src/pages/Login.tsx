@@ -77,16 +77,26 @@ export default function Login() {
       return;
     }
     setBusy(true);
-    try {
+ try {
+      // 1. Iniciamos sesión con Supabase
       const { data, error } = await supabase.auth.signInWithPassword({
-      email: parsed.data.email,
-      password: parsed.data.password,
+        email: parsed.data.email,
+        password: parsed.data.password,
       });
-      const cred = await signInWithEmailAndPassword(auth, parsed.data.email, parsed.data.password);
-      const rec = await getTotpRecord(cred.user.uid);
+
+      // 2. Comprobamos si hubo error en Supabase para que salte al catch
+      if (error) throw error;
+      if (!data.user) throw new Error("No se pudo obtener el usuario");
+
+      // ELIMINADA LA LÍNEA DE FIREBASE AQUÍ
+
+      // 3. Usamos data.user.id de Supabase en lugar del uid de Firebase
+      const rec = await getTotpRecord(data.user.id);
+      
       if (!rec || !rec.enabled) {
         const secret = generateSecret();
-        const uri = buildOtpAuthUri(cred.user.email ?? cred.user.uid, secret);
+        // Usamos data.user.email y data.user.id
+        const uri = buildOtpAuthUri(data.user.email ?? data.user.id, secret);
         const qr = await buildQrDataUrl(uri);
         setPendingSecret(secret);
         setQrDataUrl(qr);
@@ -97,7 +107,7 @@ export default function Login() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Error al iniciar sesión";
       toast.error(
-        msg.includes("invalid-credential") || msg.includes("wrong-password") || msg.includes("user-not-found")
+        msg.includes("invalid-credential") || msg.includes("wrong-password") || msg.includes("user-not-found") || msg.includes("Invalid login credentials")
           ? "Credenciales incorrectas"
           : "No se pudo iniciar sesión",
       );
@@ -105,7 +115,6 @@ export default function Login() {
       setBusy(false);
     }
   };
-
   const handleSetupConfirm = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user || !pendingSecret) return;
