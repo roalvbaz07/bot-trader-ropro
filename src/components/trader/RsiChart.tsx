@@ -54,7 +54,7 @@ export function RsiChart({ signals, onVisibleRangeChange, onChartReady }: RsiCha
     });
 
     line.createPriceLine({
-      price: 70,
+      price: 55,
       color: "rgba(255,92,122,0.5)",
       lineWidth: 1,
       lineStyle: LineStyle.Dotted,
@@ -62,7 +62,7 @@ export function RsiChart({ signals, onVisibleRangeChange, onChartReady }: RsiCha
       title: "OB",
     });
     line.createPriceLine({
-      price: 30,
+      price: 45,
       color: "rgba(79,255,176,0.5)",
       lineWidth: 1,
       lineStyle: LineStyle.Dotted,
