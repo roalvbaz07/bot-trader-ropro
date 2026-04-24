@@ -15,7 +15,7 @@ export const ASSETS: AssetDef[] = [
   { symbol: "VOO", name: "S&P 500 ETF", category: "ETFs" },
 ];
 
-export type Timeframe = "1Min" | "5Min" | "15Min" | "1Hour";
+export type Timeframe = "1Hour" | "1Day" | "1Week" | "1Month";
 
 export interface TimeframeDef {
   tf: Timeframe;
@@ -24,10 +24,10 @@ export interface TimeframeDef {
 }
 
 export const TIMEFRAMES: TimeframeDef[] = [
-  { tf: "1Min", label: "1m", limit: 200 },
-  { tf: "5Min", label: "5m", limit: 200 },
-  { tf: "15Min", label: "15m", limit: 150 },
-  { tf: "1Hour", label: "1h", limit: 100 },
+  { tf: "1Hour", label: "1h", limit: 200 },
+  { tf: "1Day", label: "1d", limit: 200 },
+  { tf: "1Week", label: "1s", limit: 200 },
+  { tf: "1Month", label: "1m", limit: 120 },
 ];
 
 /**

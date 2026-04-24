@@ -7,7 +7,7 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ALLOWED_TF = new Set(["1Min", "5Min", "15Min", "1Hour", "1Day"]);
+const ALLOWED_TF = new Set(["1Min", "5Min", "15Min", "1Hour", "1Day", "1Week", "1Month"]);
 const ALLOWED_SYMBOL = /^[A-Z.\-]{1,8}$/;
 
 interface ReqBody {
@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
       "15Min": 30,
       "1Hour": 90,
       "1Day": 365 * 2,
+      "1Week": 365 * 5,
+      "1Month": 365 * 15,
     };
     const daysBack = tfDays[timeframe] ?? 30;
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();
