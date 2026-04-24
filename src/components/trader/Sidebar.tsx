@@ -1,4 +1,4 @@
-import { ASSETS } from "@/lib/assets";
+import { ASSETS, type AssetCategory } from "@/lib/assets";
 import { cn } from "@/lib/utils";
 import { ChevronRight } from "lucide-react";
 
@@ -10,9 +10,20 @@ interface SidebarProps {
   isLive: boolean;
 }
 
+const CATEGORY_ORDER: AssetCategory[] = [
+  "Tecnología",
+  "Salud",
+  "Finanzas",
+  "ETFs",
+  "Energía",
+  "Consumo",
+];
+
 export function Sidebar({ current, onSelect, signalsToday, lastSignalTime, isLive }: SidebarProps) {
-  const tech = ASSETS.filter((a) => a.category === "Tecnología");
-  const etfs = ASSETS.filter((a) => a.category === "ETFs");
+  const grouped = CATEGORY_ORDER.map((cat) => ({
+    label: cat,
+    list: ASSETS.filter((a) => a.category === cat),
+  })).filter((g) => g.list.length > 0);
 
   const renderGroup = (label: string, list: typeof ASSETS) => (
     <>
@@ -47,7 +58,7 @@ export function Sidebar({ current, onSelect, signalsToday, lastSignalTime, isLiv
                   active ? "text-foreground" : "text-dim",
                 )}
               >
-                {a.name.replace(/ Corp\.| Inc\.| ETF|\.com/, "")}
+                {a.name.replace(/ Corp\.| Inc\.| ETF|\.com|Co\./, "")}
               </span>
               <ChevronRight
                 className={cn(
@@ -87,8 +98,9 @@ export function Sidebar({ current, onSelect, signalsToday, lastSignalTime, isLiv
 
       {/* Asset list */}
       <nav className="flex-1 overflow-y-auto pb-2">
-        {renderGroup("Tecnología", tech)}
-        {renderGroup("ETFs", etfs)}
+        {grouped.map((g) => (
+          <div key={g.label}>{renderGroup(g.label, g.list)}</div>
+        ))}
       </nav>
 
       {/* Stats */}
