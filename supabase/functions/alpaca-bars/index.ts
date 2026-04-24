@@ -73,7 +73,8 @@ Deno.serve(async (req) => {
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();
     const start = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
 
-    const target = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${encodeURIComponent(timeframe)}&limit=${limit}&feed=iex&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&adjustment=raw&sort=asc`;
+    // sort=desc para obtener las velas MÁS RECIENTES dentro del rango (Alpaca trunca por `limit`)
+    const target = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${encodeURIComponent(timeframe)}&limit=${limit}&feed=iex&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&adjustment=raw&sort=desc`;
 
     const upstream = await fetch(target, {
       headers: {
@@ -92,7 +93,9 @@ Deno.serve(async (req) => {
     }
 
     const data = await upstream.json();
-    return new Response(JSON.stringify({ bars: data.bars ?? [], symbol, timeframe }), {
+    // Alpaca devolvió desc (más recientes primero); invertimos para que el chart las muestre cronológicas
+    const bars = Array.isArray(data.bars) ? [...data.bars].reverse() : [];
+    return new Response(JSON.stringify({ bars, symbol, timeframe }), {
       status: 200,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
