@@ -1,10 +1,10 @@
-import { authenticator } from "otplib";
+import { authenticator } from "@otplib/preset-browser";
 import QRCode from "qrcode";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
-// 30s window (Microsoft Authenticator estándar). El usuario lo percibe como ~20-30s.
-authenticator.options = { step: 30, window: 1 };
+// 30s window — Microsoft Authenticator estándar.
+authenticator.options = { ...authenticator.options, step: 30, window: 1 };
 
 const ISSUER = "BotInversor";
 
