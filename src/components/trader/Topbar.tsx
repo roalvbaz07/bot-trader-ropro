@@ -1,7 +1,6 @@
 import { TIMEFRAMES, type Timeframe } from "@/lib/assets";
 import { cn } from "@/lib/utils";
-import { ShieldCheck, LogOut } from "lucide-react";
-import { useAuth } from "@/contexts/AuthContext";
+import { ShieldCheck } from "lucide-react";
 
 interface TopbarProps {
   ticker: string;
@@ -13,7 +12,6 @@ interface TopbarProps {
 }
 
 export function Topbar({ ticker, name, price, change, tf, onTfChange }: TopbarProps) {
-  const { signOut, user } = useAuth();
   return (
     <header
       className="flex items-center justify-between px-5 bg-surface border-b border-border gap-4"
@@ -73,14 +71,6 @@ export function Topbar({ ticker, name, price, change, tf, onTfChange }: TopbarPr
           <ShieldCheck className="h-3 w-3" />
           SECURE
         </span>
-        <button
-          onClick={() => signOut()}
-          title={user?.email ? `Cerrar sesión (${user.email})` : "Cerrar sesión"}
-          className="flex items-center gap-1 font-mono text-[10px] text-dim hover:text-foreground bg-surface-2 border border-border hover:border-primary/30 rounded px-2 py-1 tracking-wide transition-colors"
-        >
-          <LogOut className="h-3 w-3" />
-          <span className="hidden md:inline">SALIR</span>
-        </button>
       </div>
     </header>
   );
