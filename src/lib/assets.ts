@@ -1,4 +1,10 @@
-export type AssetCategory = "Tecnología" | "ETFs";
+export type AssetCategory =
+  | "Tecnología"
+  | "Salud"
+  | "Finanzas"
+  | "ETFs"
+  | "Energía"
+  | "Consumo";
 
 export interface AssetDef {
   symbol: string;
@@ -7,12 +13,42 @@ export interface AssetDef {
 }
 
 export const ASSETS: AssetDef[] = [
-  { symbol: "NVDA", name: "NVIDIA Corp.", category: "Tecnología" },
+  // --- TECNOLOGÍA ---
   { symbol: "AAPL", name: "Apple Inc.", category: "Tecnología" },
-  { symbol: "AMZN", name: "Amazon.com", category: "Tecnología" },
+  { symbol: "AMZN", name: "Amazon.com Inc.", category: "Tecnología" },
+  { symbol: "AVGO", name: "Broadcom Inc.", category: "Tecnología" },
   { symbol: "MSFT", name: "Microsoft Corp.", category: "Tecnología" },
-  { symbol: "QQQ", name: "Nasdaq 100 ETF", category: "ETFs" },
-  { symbol: "VOO", name: "S&P 500 ETF", category: "ETFs" },
+  { symbol: "NVDA", name: "NVIDIA Corp.", category: "Tecnología" },
+  { symbol: "ORCL", name: "Oracle Corp.", category: "Tecnología" },
+
+  // --- SALUD ---
+  { symbol: "ABBV", name: "AbbVie Inc.", category: "Salud" },
+  { symbol: "ISRG", name: "Intuitive Surgical", category: "Salud" },
+  { symbol: "LLY", name: "Eli Lilly and Company", category: "Salud" },
+  { symbol: "UNH", name: "UnitedHealth Group", category: "Salud" },
+
+  // --- FINANZAS ---
+  { symbol: "BAC", name: "Bank of America", category: "Finanzas" },
+  { symbol: "JPM", name: "JPMorgan Chase", category: "Finanzas" },
+  { symbol: "MA", name: "Mastercard Inc.", category: "Finanzas" },
+  { symbol: "V", name: "Visa Inc.", category: "Finanzas" },
+
+  // --- ETFs ---
+  { symbol: "QQQ", name: "Invesco QQQ Trust", category: "ETFs" },
+  { symbol: "VOO", name: "Vanguard S&P 500", category: "ETFs" },
+  { symbol: "VT", name: "Vanguard Total World Stock", category: "ETFs" },
+  { symbol: "VTI", name: "Vanguard Total Stock Market", category: "ETFs" },
+
+  // --- ENERGÍA ---
+  { symbol: "CVX", name: "Chevron Corp.", category: "Energía" },
+  { symbol: "NEE", name: "NextEra Energy", category: "Energía" },
+  { symbol: "XOM", name: "Exxon Mobil", category: "Energía" },
+
+  // --- CONSUMO ---
+  { symbol: "COST", name: "Costco Wholesale", category: "Consumo" },
+  { symbol: "KO", name: "Coca-Cola Co.", category: "Consumo" },
+  { symbol: "MCD", name: "McDonald's Corp.", category: "Consumo" },
+  { symbol: "WMT", name: "Walmart", category: "Consumo" },
 ];
 
 export type Timeframe = "1Hour" | "1Day" | "1Week" | "1Month";
