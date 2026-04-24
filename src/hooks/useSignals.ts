@@ -26,7 +26,7 @@ export function useSignals(symbol: string) {
     setError(null);
     setSignals([]);
 
-    const q = query(collection(db, "señales"), where("activo", "==", symbol));
+    const q = query(collection(db, "signals"), where("activo", "==", symbol));
     const unsub = onSnapshot(
       q,
       (snap) => {
