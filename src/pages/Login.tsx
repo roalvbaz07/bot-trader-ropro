@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { supabase } from "@/integrations/supabase/client";
 import { auth } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -78,6 +78,10 @@ export default function Login() {
     }
     setBusy(true);
     try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+      });
       const cred = await signInWithEmailAndPassword(auth, parsed.data.email, parsed.data.password);
       const rec = await getTotpRecord(cred.user.uid);
       if (!rec || !rec.enabled) {
