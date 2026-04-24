@@ -1,6 +1,6 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
-import { onAuthStateChanged, signOut as fbSignOut, type User } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { supabase } from "@/integrations/supabase/client";
+import type { User } from "@supabase/supabase-js";
 
 interface AuthCtx {
   user: User | null;
@@ -21,29 +21,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [totpVerified, setTotpVerifiedState] = useState(false);
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, (u) => {
-      setUser(u);
-      if (u) {
-        const stored = sessionStorage.getItem(TOTP_SESSION_KEY);
-        setTotpVerifiedState(stored === u.uid);
-      } else {
-        setTotpVerifiedState(false);
-        sessionStorage.removeItem(TOTP_SESSION_KEY);
-      }
-      setLoading(false);
-    });
-    return () => unsub();
-  }, []);
+  // 1. Verificar sesión inicial
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    const u = session?.user ?? null;
+    setUser(u);
+    if (u) {
+      const stored = sessionStorage.getItem(TOTP_SESSION_KEY);
+      setTotpVerifiedState(stored === u.id); // Supabase usa .id, no .uid
+    }
+    setLoading(false);
+  });
+
+  // 2. Escuchar cambios de estado (login/logout)
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const u = session?.user ?? null;
+    setUser(u);
+    if (u) {
+      const stored = sessionStorage.getItem(TOTP_SESSION_KEY);
+      setTotpVerifiedState(stored === u.id);
+    } else {
+      setTotpVerifiedState(false);
+      sessionStorage.removeItem(TOTP_SESSION_KEY);
+    }
+    setLoading(false);
+  });
+
+  return () => subscription.unsubscribe();
+}, []);
 
   const setTotpVerified = (v: boolean) => {
     setTotpVerifiedState(v);
-    if (v && user) sessionStorage.setItem(TOTP_SESSION_KEY, user.uid);
+    if (v && user) sessionStorage.setItem(TOTP_SESSION_KEY, user.id); 
     else sessionStorage.removeItem(TOTP_SESSION_KEY);
   };
 
   const signOut = async () => {
     sessionStorage.removeItem(TOTP_SESSION_KEY);
-    await fbSignOut(auth);
+    await supabase.auth.signOut();
   };
 
   return (
