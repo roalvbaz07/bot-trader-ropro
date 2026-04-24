@@ -66,6 +66,8 @@ Deno.serve(async (req) => {
       "15Min": 30,
       "1Hour": 90,
       "1Day": 365 * 2,
+      "1Week": 365 * 5,
+      "1Month": 365 * 15,
     };
     const daysBack = tfDays[timeframe] ?? 30;
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();
