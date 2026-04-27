@@ -73,35 +73,55 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     const volume = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
       priceScaleId: "vol",
-      color: COLORS.bullSoft,
+      color: "rgba(79,255,176,0.4)",
     });
     chart.priceScale("vol").applyOptions({
       scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    // Bollinger Bands overlays
-    const bbUpper = chart.addLineSeries({
-      color: COLORS.bbUpper,
+    // Relleno suave entre bandas Bollinger (dos áreas: superior baja hasta media, inferior baja desde media)
+    const bbFillTop = chart.addAreaSeries({
+      topColor: COLORS.bbBandFill,
+      bottomColor: "rgba(95,184,255,0.01)",
+      lineColor: "transparent",
       lineWidth: 1,
-      lineStyle: LineStyle.Solid,
       priceLineVisible: false,
       lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    const bbFillBottom = chart.addAreaSeries({
+      topColor: "rgba(95,184,255,0.01)",
+      bottomColor: COLORS.bbBandFill,
+      lineColor: "transparent",
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    // Bollinger Bands líneas
+    const bbUpper = chart.addLineSeries({
+      color: COLORS.bbBand,
+      lineWidth: 2,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
     const bbMiddle = chart.addLineSeries({
       color: COLORS.bbMiddle,
-      lineWidth: 1,
-      lineStyle: LineStyle.Dashed,
+      lineWidth: 2,
+      lineStyle: LineStyle.Solid,
       priceLineVisible: false,
-      lastValueVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
     const bbLower = chart.addLineSeries({
-      color: COLORS.bbLower,
-      lineWidth: 1,
+      color: COLORS.bbBand,
+      lineWidth: 2,
       lineStyle: LineStyle.Solid,
       priceLineVisible: false,
-      lastValueVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
 
