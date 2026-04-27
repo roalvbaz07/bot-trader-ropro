@@ -1,6 +1,8 @@
 // Edge function: proxy seguro a Alpaca Markets para obtener velas (bars).
 // Las claves APCA_API_KEY_ID / APCA_API_SECRET_KEY se guardan como secrets.
 
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
@@ -22,11 +24,35 @@ Deno.serve(async (req) => {
   }
 
   try {
+    // Require authenticated caller (verify JWT in code since verify_jwt = false)
+    const authHeader = req.headers.get("Authorization");
+    if (!authHeader?.startsWith("Bearer ")) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      global: { headers: { Authorization: authHeader } },
+    });
+    const token = authHeader.replace("Bearer ", "");
+    const { data: claimsData, error: claimsErr } = await supabase.auth.getClaims(token);
+    if (claimsErr || !claimsData?.claims) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     const KEY = Deno.env.get("APCA_API_KEY_ID");
     const SECRET = Deno.env.get("APCA_API_SECRET_KEY");
     if (!KEY || !SECRET) {
+      console.error("Alpaca credentials not configured");
       return new Response(
-        JSON.stringify({ error: "Alpaca credentials not configured" }),
+        JSON.stringify({ error: "Service unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -87,7 +113,7 @@ Deno.serve(async (req) => {
       const text = await upstream.text();
       console.error("Alpaca upstream error", upstream.status, text);
       return new Response(
-        JSON.stringify({ error: `Alpaca ${upstream.status}`, details: text.slice(0, 400) }),
+        JSON.stringify({ error: "Market data unavailable" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -102,7 +128,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("alpaca-bars error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
