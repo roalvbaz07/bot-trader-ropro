@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import {
   createChart,
   CrosshairMode,
+  LineStyle,
   type IChartApi,
   type ISeriesApi,
   type Time,
@@ -26,6 +27,9 @@ const COLORS = {
   bear: "#ff5c7a",
   bullSoft: "rgba(79,255,176,0.4)",
   bearSoft: "rgba(255,92,122,0.4)",
+  bbUpper: "#ff5c7a",
+  bbMiddle: "#48b8ff",
+  bbLower: "#4fffb0",
 };
 
 export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }: PriceChartProps) {
@@ -33,6 +37,9 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const bbUpperRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const bbMiddleRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const bbLowerRef = useRef<ISeriesApi<"Line"> | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -72,9 +79,38 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
       scaleMargins: { top: 0.85, bottom: 0 },
     });
 
+    // Bollinger Bands overlays
+    const bbUpper = chart.addLineSeries({
+      color: COLORS.bbUpper,
+      lineWidth: 1,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    const bbMiddle = chart.addLineSeries({
+      color: COLORS.bbMiddle,
+      lineWidth: 1,
+      lineStyle: LineStyle.Dashed,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    const bbLower = chart.addLineSeries({
+      color: COLORS.bbLower,
+      lineWidth: 1,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
     chartRef.current = chart;
     candleRef.current = candle;
     volumeRef.current = volume;
+    bbUpperRef.current = bbUpper;
+    bbMiddleRef.current = bbMiddle;
+    bbLowerRef.current = bbLower;
     onChartReady?.(chart);
 
     const sub = chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
@@ -87,6 +123,9 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
       chartRef.current = null;
       candleRef.current = null;
       volumeRef.current = null;
+      bbUpperRef.current = null;
+      bbMiddleRef.current = null;
+      bbLowerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -110,6 +149,35 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     volumeRef.current.setData(volData);
     chartRef.current?.timeScale().fitContent();
   }, [bars]);
+
+  // Update Bollinger Bands from signals
+  useEffect(() => {
+    if (!bbUpperRef.current || !bbMiddleRef.current || !bbLowerRef.current) return;
+
+    // Deduplicate by timestamp (seconds), keep latest per bucket
+    const upMap = new Map<number, number>();
+    const midMap = new Map<number, number>();
+    const lowMap = new Map<number, number>();
+
+    signals.forEach((s) => {
+      const t = Math.floor(s.dateMs / 1000);
+      const up = parseFloat(String(s.banda_superior));
+      const mid = parseFloat(String(s.banda_media));
+      const low = parseFloat(String(s.banda_inferior));
+      if (!isNaN(up)) upMap.set(t, up);
+      if (!isNaN(mid)) midMap.set(t, mid);
+      if (!isNaN(low)) lowMap.set(t, low);
+    });
+
+    const toSeries = (m: Map<number, number>) =>
+      Array.from(m.entries())
+        .sort((a, b) => a[0] - b[0])
+        .map(([t, value]) => ({ time: t as Time, value }));
+
+    bbUpperRef.current.setData(toSeries(upMap));
+    bbMiddleRef.current.setData(toSeries(midMap));
+    bbLowerRef.current.setData(toSeries(lowMap));
+  }, [signals]);
 
   // Update markers from signals
   useEffect(() => {

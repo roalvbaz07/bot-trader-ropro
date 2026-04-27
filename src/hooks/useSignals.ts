@@ -9,8 +9,9 @@ export interface SignalDoc {
   id: string;
   activo: string;
   señal: SignalType;
-  rsi?: number | string;
-  macd?: number | string;
+  banda_superior?: number | string;
+  banda_media?: number | string;
+  banda_inferior?: number | string;
   timestamp: string; // "YYYYMMDD_HHMM"
   dateIso: string;   // derived
   dateMs: number;    // derived
@@ -39,8 +40,9 @@ export function useSignals(symbol: string) {
             id: d.id,
             activo: String(raw.activo ?? symbol),
             señal: (raw["señal"] as SignalType) ?? "ESPERAR",
-            rsi: raw.rsi as number | string | undefined,
-            macd: raw.macd as number | string | undefined,
+            banda_superior: raw.banda_superior as number | string | undefined,
+            banda_media: raw.banda_media as number | string | undefined,
+            banda_inferior: raw.banda_inferior as number | string | undefined,
             timestamp: ts,
             dateIso,
             dateMs: new Date(dateIso).getTime(),
