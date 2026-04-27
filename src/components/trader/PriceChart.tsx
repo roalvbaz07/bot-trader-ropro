@@ -19,17 +19,15 @@ interface PriceChartProps {
 }
 
 const COLORS = {
-  bg: "#070a0f",
-  text: "#5e7a96",
-  grid: "rgba(255,255,255,0.04)",
-  border: "rgba(255,255,255,0.06)",
+  bg: "#000000",
+  text: "#8a9bb0",
+  grid: "rgba(255,255,255,0.05)",
+  border: "rgba(255,255,255,0.08)",
   bull: "#4fffb0",
   bear: "#ff5c7a",
-  bullSoft: "rgba(79,255,176,0.4)",
-  bearSoft: "rgba(255,92,122,0.4)",
-  bbUpper: "#ff5c7a",
-  bbMiddle: "#48b8ff",
-  bbLower: "#4fffb0",
+  bbBand: "#5fb8ff",       // azul claro (banda superior e inferior)
+  bbBandFill: "rgba(95,184,255,0.08)", // relleno suave entre bandas
+  bbMiddle: "#ff9a3c",     // naranja (banda media)
 };
 
 export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }: PriceChartProps) {
