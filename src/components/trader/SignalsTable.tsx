@@ -55,14 +55,14 @@ export function SignalsTable({ signals, bars, loading, error }: SignalsTableProp
           <tbody>
             {error && (
               <tr>
-                <td colSpan={7} className="text-center py-5 text-bear text-[10px] tracking-wide">
+                <td colSpan={8} className="text-center py-5 text-bear text-[10px] tracking-wide">
                   Error Firebase: {error}
                 </td>
               </tr>
             )}
             {!error && rows.length === 0 && (
               <tr>
-                <td colSpan={7} className="text-center py-5 text-dim-2 text-[10px] tracking-wide">
+                <td colSpan={8} className="text-center py-5 text-dim-2 text-[10px] tracking-wide">
                   {loading ? "Conectando a Firebase…" : "Sin señales para este activo"}
                 </td>
               </tr>
