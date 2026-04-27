@@ -42,7 +42,7 @@ export function SignalsTable({ signals, bars, loading, error }: SignalsTableProp
         <table className="w-full min-w-[640px] font-mono text-[11px] border-collapse">
           <thead className="sticky top-0 bg-surface z-[1]">
             <tr>
-              {["Fecha", "Hora", "Señal", "Precio", "RSI", "MACD", "Tendencia"].map((h) => (
+              {["Fecha", "Hora", "Señal", "Precio", "B. Sup", "B. Media", "B. Inf", "Tendencia"].map((h) => (
                 <th
                   key={h}
                   className="text-left text-dim-2 text-[9px] font-semibold tracking-[0.12em] uppercase px-3.5 py-1.5 border-b border-border"
