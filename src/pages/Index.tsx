@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useState } from "react";
 import type { IChartApi, LogicalRange } from "lightweight-charts";
+import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/trader/Sidebar";
 import { Topbar } from "@/components/trader/Topbar";
 import { PriceChart } from "@/components/trader/PriceChart";
@@ -9,6 +10,9 @@ import { SignalsTable } from "@/components/trader/SignalsTable";
 import { ASSETS, TIMEFRAMES, type Timeframe } from "@/lib/assets";
 import { useBars } from "@/hooks/useBars";
 import { useSignals } from "@/hooks/useSignals";
+import { useAllSignalsStats } from "@/hooks/useAllSignals";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { cn } from "@/lib/utils";
 
 const Index = () => {
   const [symbol, setSymbol] = useState<string>("NVDA");
@@ -16,9 +20,12 @@ const Index = () => {
     tf: TIMEFRAMES[0].tf,
     limit: TIMEFRAMES[0].limit,
   });
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   const { bars, loading: barsLoading, error: barsError } = useBars(symbol, tfState.tf, tfState.limit);
   const { signals, loading: sigLoading, error: sigError } = useSignals(symbol);
+  const { stats: globalStats, error: globalErr } = useAllSignalsStats();
 
   // Topbar derived
   const { price, change, name } = useMemo(() => {
@@ -30,90 +37,120 @@ const Index = () => {
     return { price: last, change: chg, name: def?.name ?? symbol };
   }, [bars, symbol]);
 
-  // Sidebar derived
-  const stats = useMemo(() => {
-    const today = new Date();
-    const todayKey = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, "0")}${String(today.getDate()).padStart(2, "0")}`;
-    let buys = 0;
-    let sells = 0;
-    let lastTime = "—";
-    [...signals]
-      .sort((a, b) => b.dateMs - a.dateMs)
-      .forEach((s) => {
-        if (s.timestamp.startsWith(todayKey)) {
-          if (s.señal === "COMPRAR") buys++;
-          if (s.señal === "VENDER") sells++;
-        }
-        if (lastTime === "—" && s.señal !== "ESPERAR") {
-          const h = s.timestamp.split("_")[1] ?? "—";
-          lastTime = h.length === 4 ? `${h.substring(0, 2)}:${h.substring(2, 4)}` : h;
-        }
-      });
-    return { buys, sells, lastTime };
-  }, [signals]);
-
-  // Sync zoom across the 3 charts
-  const chartsRef = useRef<{ price?: IChartApi; rsi?: IChartApi; macd?: IChartApi }>({});
+  // Inverse sync between RSI and MACD only (price chart is independent)
+  const chartsRef = useRef<{ rsi?: IChartApi; macd?: IChartApi }>({});
   const syncing = useRef(false);
 
-  const makeSync = useCallback(
-    (origin: "price" | "rsi" | "macd") => (range: LogicalRange | null) => {
+  const makeInverseSync = useCallback(
+    (origin: "rsi" | "macd") => (range: LogicalRange | null) => {
       if (!range || syncing.current) return;
+      const target = origin === "rsi" ? chartsRef.current.macd : chartsRef.current.rsi;
+      if (!target) return;
       syncing.current = true;
-      const targets: Array<keyof typeof chartsRef.current> = ["price", "rsi", "macd"].filter(
-        (k) => k !== origin,
-      ) as Array<"price" | "rsi" | "macd">;
-      targets.forEach((k) => {
-        const c = chartsRef.current[k];
-        if (c) c.timeScale().setVisibleLogicalRange(range);
+      // Inverse: flip the range around its center
+      const center = (range.from + range.to) / 2;
+      const inverted = {
+        from: center - (range.to - center),
+        to: center + (center - range.from),
+      };
+      target.timeScale().setVisibleLogicalRange(inverted);
+      // release in next tick to avoid feedback
+      requestAnimationFrame(() => {
+        syncing.current = false;
       });
-      syncing.current = false;
     },
     [],
   );
 
+  const handleSelect = (s: string) => {
+    setSymbol(s);
+    if (isMobile) setSidebarOpen(false);
+  };
+
   return (
-    <div className="grid h-screen w-full overflow-hidden" style={{ gridTemplateColumns: "var(--sidebar-w) 1fr" }}>
-      <Sidebar
-        current={symbol}
-        onSelect={setSymbol}
-        signalsToday={{ buys: stats.buys, sells: stats.sells }}
-        lastSignalTime={stats.lastTime}
-        isLive={!sigError}
-      />
+    <div
+      className="relative grid h-screen w-full overflow-hidden md:grid-cols-[var(--sidebar-w)_1fr]"
+      style={{ gridTemplateColumns: isMobile ? "1fr" : undefined }}
+    >
+      {/* Sidebar — drawer on mobile, fixed on desktop */}
+      {isMobile ? (
+        <>
+          {sidebarOpen && (
+            <div
+              className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm"
+              onClick={() => setSidebarOpen(false)}
+            />
+          )}
+          <div
+            className={cn(
+              "fixed inset-y-0 left-0 z-50 transition-transform duration-200",
+              sidebarOpen ? "translate-x-0" : "-translate-x-full",
+            )}
+          >
+            <Sidebar
+              current={symbol}
+              onSelect={handleSelect}
+              signalsToday={{ buys: globalStats.buys, sells: globalStats.sells }}
+              lastSignalTime={globalStats.lastTime}
+              isLive={!globalErr}
+            />
+          </div>
+        </>
+      ) : (
+        <Sidebar
+          current={symbol}
+          onSelect={handleSelect}
+          signalsToday={{ buys: globalStats.buys, sells: globalStats.sells }}
+          lastSignalTime={globalStats.lastTime}
+          isLive={!globalErr}
+        />
+      )}
 
       <main
         className="grid h-screen overflow-hidden bg-background"
-        style={{ gridTemplateRows: "var(--topbar-h) 1fr var(--signals-h)" }}
+        style={{
+          gridTemplateRows: "var(--topbar-h) 1fr var(--signals-h)",
+        }}
       >
-        <Topbar
-          ticker={symbol}
-          name={name}
-          price={price}
-          change={change}
-          tf={tfState.tf}
-          onTfChange={(tf, limit) => setTfState({ tf, limit })}
-        />
+        <div className="flex items-stretch">
+          {isMobile && (
+            <button
+              onClick={() => setSidebarOpen((v) => !v)}
+              className="px-3 bg-surface border-b border-r border-border text-foreground"
+              aria-label="Menu"
+            >
+              {sidebarOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          )}
+          <div className="flex-1 min-w-0">
+            <Topbar
+              ticker={symbol}
+              name={name}
+              price={price}
+              change={change}
+              tf={tfState.tf}
+              onTfChange={(tf, limit) => setTfState({ tf, limit })}
+            />
+          </div>
+        </div>
 
         {/* Charts area */}
-        <div className="grid overflow-hidden" style={{ gridTemplateRows: "1fr 200px" }}>
-          {/* Price */}
+        <div
+          className="grid overflow-hidden"
+          style={{ gridTemplateRows: isMobile ? "1fr 160px" : "1fr 200px" }}
+        >
+          {/* Price (independent zoom) */}
           <div className="relative overflow-hidden">
             <div className="absolute top-2 left-3 z-10 font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-dim pointer-events-none">
               Precio &amp; Señales
               {barsLoading && <span className="ml-2 text-dim-2">cargando…</span>}
               {barsError && <span className="ml-2 text-bear">{barsError.slice(0, 60)}</span>}
             </div>
-            <PriceChart
-              bars={bars}
-              signals={signals}
-              onChartReady={(c) => (chartsRef.current.price = c)}
-              onVisibleRangeChange={makeSync("price")}
-            />
+            <PriceChart bars={bars} signals={signals} />
           </div>
 
-          {/* RSI + MACD */}
-          <div className="grid grid-cols-2 border-t border-border">
+          {/* RSI + MACD — stack on mobile, side-by-side on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 border-t border-border">
             <div className="relative overflow-hidden">
               <div className="absolute top-2 left-3 z-10 font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-dim pointer-events-none">
                 RSI <span className="text-dim-2 font-normal">(14)</span>
@@ -121,17 +158,17 @@ const Index = () => {
               <RsiChart
                 signals={signals}
                 onChartReady={(c) => (chartsRef.current.rsi = c)}
-                onVisibleRangeChange={makeSync("rsi")}
+                onVisibleRangeChange={makeInverseSync("rsi")}
               />
             </div>
-            <div className="relative overflow-hidden border-l border-border">
+            <div className="relative overflow-hidden border-t sm:border-t-0 sm:border-l border-border">
               <div className="absolute top-2 left-3 z-10 font-mono text-[10px] font-semibold tracking-[0.1em] uppercase text-dim pointer-events-none">
                 MACD
               </div>
               <MacdChart
                 signals={signals}
                 onChartReady={(c) => (chartsRef.current.macd = c)}
-                onVisibleRangeChange={makeSync("macd")}
+                onVisibleRangeChange={makeInverseSync("macd")}
               />
             </div>
           </div>
