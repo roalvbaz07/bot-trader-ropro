@@ -82,23 +82,10 @@ export function SignalsTable({ signals, bars, loading, error }: SignalsTableProp
               const bar = bars.find((b) => Math.abs(new Date(b.t).getTime() - d.dateMs) < 60_000);
               const precio = bar ? `$${bar.c.toFixed(2)}` : "—";
 
-              const rsi = parseFloat(String(d.rsi));
-              const rsiCls = isNaN(rsi)
-                ? ""
-                : rsi >= 70
-                  ? "text-bear"
-                  : rsi <= 30
-                    ? "text-bull"
-                    : "text-foreground";
-              const rsiTxt = isNaN(rsi) ? "—" : rsi.toFixed(1);
-
-              const macd = parseFloat(String(d.macd));
-              const macdTxt = isNaN(macd)
-                ? "—"
-                : macd >= 0
-                  ? `+${macd.toFixed(4)}`
-                  : macd.toFixed(4);
-              const macdCls = isNaN(macd) ? "" : macd >= 0 ? "text-bull" : "text-bear";
+              const bSup = parseFloat(String(d.banda_superior));
+              const bMed = parseFloat(String(d.banda_media));
+              const bInf = parseFloat(String(d.banda_inferior));
+              const fmt = (n: number) => (isNaN(n) ? "—" : `$${n.toFixed(2)}`);
 
               const tendencia =
                 señal === "COMPRAR" ? (
@@ -123,8 +110,9 @@ export function SignalsTable({ signals, bars, loading, error }: SignalsTableProp
                     {señalText}
                   </td>
                   <td className="px-3.5 py-1.5 text-foreground border-b border-border whitespace-nowrap">{precio}</td>
-                  <td className={cn("px-3.5 py-1.5 border-b border-border whitespace-nowrap", rsiCls)}>{rsiTxt}</td>
-                  <td className={cn("px-3.5 py-1.5 border-b border-border whitespace-nowrap", macdCls)}>{macdTxt}</td>
+                  <td className="px-3.5 py-1.5 text-bear border-b border-border whitespace-nowrap">{fmt(bSup)}</td>
+                  <td className="px-3.5 py-1.5 border-b border-border whitespace-nowrap" style={{ color: "#48b8ff" }}>{fmt(bMed)}</td>
+                  <td className="px-3.5 py-1.5 text-bull border-b border-border whitespace-nowrap">{fmt(bInf)}</td>
                   <td className="px-3.5 py-1.5 border-b border-border whitespace-nowrap">{tendencia}</td>
                 </tr>
               );
