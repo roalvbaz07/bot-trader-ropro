@@ -35,6 +35,8 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const bbFillTopRef = useRef<ISeriesApi<"Area"> | null>(null);
+  const bbFillBottomRef = useRef<ISeriesApi<"Area"> | null>(null);
   const bbUpperRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef = useRef<ISeriesApi<"Line"> | null>(null);
