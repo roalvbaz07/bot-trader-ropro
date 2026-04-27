@@ -57,6 +57,13 @@
     --sidebar-w: 196px;
     --topbar-h: 52px;
     --signals-h: 220px;
+  }
+
+  @media (max-width: 767px) {
+    :root {
+      --signals-h: 160px;
+      --topbar-h: 48px;
+    }
 
     /* Typography */
     --font-mono: 'IBM Plex Mono', ui-monospace, monospace;

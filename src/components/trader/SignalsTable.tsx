@@ -38,8 +38,8 @@ export function SignalsTable({ signals, bars, loading, error }: SignalsTableProp
         {loading && <span className="font-mono text-[10px] text-dim-2">cargando…</span>}
       </header>
 
-      <div className="overflow-y-auto flex-1">
-        <table className="w-full font-mono text-[11px] border-collapse">
+      <div className="overflow-auto flex-1">
+        <table className="w-full min-w-[640px] font-mono text-[11px] border-collapse">
           <thead className="sticky top-0 bg-surface z-[1]">
             <tr>
               {["Fecha", "Hora", "Señal", "Precio", "RSI", "MACD", "Tendencia"].map((h) => (
