@@ -201,6 +201,10 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     bbUpperRef.current.setData(toSeries(upMap));
     bbMiddleRef.current.setData(toSeries(midMap));
     bbLowerRef.current.setData(toSeries(lowMap));
+
+    // Relleno entre bandas: usamos los mismos puntos para dar tinte azul al canal
+    bbFillTopRef.current?.setData(toSeries(upMap));
+    bbFillBottomRef.current?.setData(toSeries(lowMap));
   }, [signals]);
 
   // Update markers from signals
