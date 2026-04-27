@@ -115,13 +115,13 @@ const Index = () => {
           </div>
           <div className="absolute top-2 right-3 z-10 flex items-center gap-3 font-mono text-[9px] tracking-[0.08em] uppercase pointer-events-none">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-px bg-bear" /> Sup
+              <span className="w-2.5 h-0.5" style={{ background: "#5fb8ff" }} /> Sup
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-px" style={{ background: "#48b8ff" }} /> Media
+              <span className="w-2.5 h-0.5" style={{ background: "#ff9a3c" }} /> Media
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-px bg-bull" /> Inf
+              <span className="w-2.5 h-0.5" style={{ background: "#5fb8ff" }} /> Inf
             </span>
           </div>
           <PriceChart bars={bars} signals={signals} />
