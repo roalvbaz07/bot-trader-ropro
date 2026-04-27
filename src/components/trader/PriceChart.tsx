@@ -19,17 +19,15 @@ interface PriceChartProps {
 }
 
 const COLORS = {
-  bg: "#070a0f",
-  text: "#5e7a96",
-  grid: "rgba(255,255,255,0.04)",
-  border: "rgba(255,255,255,0.06)",
+  bg: "#000000",
+  text: "#8a9bb0",
+  grid: "rgba(255,255,255,0.05)",
+  border: "rgba(255,255,255,0.08)",
   bull: "#4fffb0",
   bear: "#ff5c7a",
-  bullSoft: "rgba(79,255,176,0.4)",
-  bearSoft: "rgba(255,92,122,0.4)",
-  bbUpper: "#ff5c7a",
-  bbMiddle: "#48b8ff",
-  bbLower: "#4fffb0",
+  bbBand: "#5fb8ff",       // azul claro (banda superior e inferior)
+  bbBandFill: "rgba(95,184,255,0.08)", // relleno suave entre bandas
+  bbMiddle: "#ff9a3c",     // naranja (banda media)
 };
 
 export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }: PriceChartProps) {
@@ -37,6 +35,8 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
+  const bbFillTopRef = useRef<ISeriesApi<"Area"> | null>(null);
+  const bbFillBottomRef = useRef<ISeriesApi<"Area"> | null>(null);
   const bbUpperRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef = useRef<ISeriesApi<"Line"> | null>(null);
@@ -73,41 +73,63 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     const volume = chart.addHistogramSeries({
       priceFormat: { type: "volume" },
       priceScaleId: "vol",
-      color: COLORS.bullSoft,
+      color: "rgba(79,255,176,0.4)",
     });
     chart.priceScale("vol").applyOptions({
       scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    // Bollinger Bands overlays
-    const bbUpper = chart.addLineSeries({
-      color: COLORS.bbUpper,
+    // Relleno suave entre bandas Bollinger (dos áreas: superior baja hasta media, inferior baja desde media)
+    const bbFillTop = chart.addAreaSeries({
+      topColor: COLORS.bbBandFill,
+      bottomColor: "rgba(95,184,255,0.01)",
+      lineColor: "transparent",
       lineWidth: 1,
-      lineStyle: LineStyle.Solid,
       priceLineVisible: false,
       lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+    const bbFillBottom = chart.addAreaSeries({
+      topColor: "rgba(95,184,255,0.01)",
+      bottomColor: COLORS.bbBandFill,
+      lineColor: "transparent",
+      lineWidth: 1,
+      priceLineVisible: false,
+      lastValueVisible: false,
+      crosshairMarkerVisible: false,
+    });
+
+    // Bollinger Bands líneas
+    const bbUpper = chart.addLineSeries({
+      color: COLORS.bbBand,
+      lineWidth: 2,
+      lineStyle: LineStyle.Solid,
+      priceLineVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
     const bbMiddle = chart.addLineSeries({
       color: COLORS.bbMiddle,
-      lineWidth: 1,
-      lineStyle: LineStyle.Dashed,
+      lineWidth: 2,
+      lineStyle: LineStyle.Solid,
       priceLineVisible: false,
-      lastValueVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
     const bbLower = chart.addLineSeries({
-      color: COLORS.bbLower,
-      lineWidth: 1,
+      color: COLORS.bbBand,
+      lineWidth: 2,
       lineStyle: LineStyle.Solid,
       priceLineVisible: false,
-      lastValueVisible: false,
+      lastValueVisible: true,
       crosshairMarkerVisible: false,
     });
 
     chartRef.current = chart;
     candleRef.current = candle;
     volumeRef.current = volume;
+    bbFillTopRef.current = bbFillTop;
+    bbFillBottomRef.current = bbFillBottom;
     bbUpperRef.current = bbUpper;
     bbMiddleRef.current = bbMiddle;
     bbLowerRef.current = bbLower;
@@ -123,6 +145,8 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
       chartRef.current = null;
       candleRef.current = null;
       volumeRef.current = null;
+      bbFillTopRef.current = null;
+      bbFillBottomRef.current = null;
       bbUpperRef.current = null;
       bbMiddleRef.current = null;
       bbLowerRef.current = null;
@@ -177,6 +201,10 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     bbUpperRef.current.setData(toSeries(upMap));
     bbMiddleRef.current.setData(toSeries(midMap));
     bbLowerRef.current.setData(toSeries(lowMap));
+
+    // Relleno entre bandas: usamos los mismos puntos para dar tinte azul al canal
+    bbFillTopRef.current?.setData(toSeries(upMap));
+    bbFillBottomRef.current?.setData(toSeries(lowMap));
   }, [signals]);
 
   // Update markers from signals
