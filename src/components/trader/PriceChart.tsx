@@ -128,6 +128,8 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
     chartRef.current = chart;
     candleRef.current = candle;
     volumeRef.current = volume;
+    bbFillTopRef.current = bbFillTop;
+    bbFillBottomRef.current = bbFillBottom;
     bbUpperRef.current = bbUpper;
     bbMiddleRef.current = bbMiddle;
     bbLowerRef.current = bbLower;
@@ -143,6 +145,8 @@ export function PriceChart({ bars, signals, onVisibleRangeChange, onChartReady }
       chartRef.current = null;
       candleRef.current = null;
       volumeRef.current = null;
+      bbFillTopRef.current = null;
+      bbFillBottomRef.current = null;
       bbUpperRef.current = null;
       bbMiddleRef.current = null;
       bbLowerRef.current = null;
