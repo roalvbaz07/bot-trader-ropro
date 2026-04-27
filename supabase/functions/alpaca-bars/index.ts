@@ -1,5 +1,6 @@
 // Edge function: proxy seguro a Alpaca Markets para obtener velas (bars).
 // Las claves APCA_API_KEY_ID / APCA_API_SECRET_KEY se guardan como secrets.
+// Auth: verify_jwt = true en supabase/config.toml — la plataforma exige JWT válido.
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -25,8 +26,9 @@ Deno.serve(async (req) => {
     const KEY = Deno.env.get("APCA_API_KEY_ID");
     const SECRET = Deno.env.get("APCA_API_SECRET_KEY");
     if (!KEY || !SECRET) {
+      console.error("Alpaca credentials not configured");
       return new Response(
-        JSON.stringify({ error: "Alpaca credentials not configured" }),
+        JSON.stringify({ error: "Service unavailable" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
@@ -73,7 +75,6 @@ Deno.serve(async (req) => {
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();
     const start = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
 
-    // sort=desc para obtener las velas MÁS RECIENTES dentro del rango (Alpaca trunca por `limit`)
     const target = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${encodeURIComponent(timeframe)}&limit=${limit}&feed=iex&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&adjustment=raw&sort=desc`;
 
     const upstream = await fetch(target, {
@@ -87,13 +88,13 @@ Deno.serve(async (req) => {
       const text = await upstream.text();
       console.error("Alpaca upstream error", upstream.status, text);
       return new Response(
-        JSON.stringify({ error: `Alpaca ${upstream.status}`, details: text.slice(0, 400) }),
+        JSON.stringify({ error: "Market data unavailable" }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     const data = await upstream.json();
-    // Alpaca devolvió desc (más recientes primero); invertimos para que el chart las muestre cronológicas
+    // Alpaca devolvió desc (más recientes primero); invertimos para mostrar cronológicas
     const bars = Array.isArray(data.bars) ? [...data.bars].reverse() : [];
     return new Response(JSON.stringify({ bars, symbol, timeframe }), {
       status: 200,
@@ -102,7 +103,7 @@ Deno.serve(async (req) => {
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error("alpaca-bars error:", msg);
-    return new Response(JSON.stringify({ error: msg }), {
+    return new Response(JSON.stringify({ error: "Internal error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
