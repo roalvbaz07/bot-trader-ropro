@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Menu, X } from "lucide-react";
 import { Sidebar } from "@/components/trader/Sidebar";
 import { Topbar } from "@/components/trader/Topbar";
-import { PriceChart } from "@/components/trader/PriceChart";
+import { PriceChart, type ChartType } from "@/components/trader/PriceChart";
 import { SignalsTable } from "@/components/trader/SignalsTable";
 import { ASSETS, TIMEFRAMES, type Timeframe } from "@/lib/assets";
 import { useBars } from "@/hooks/useBars";
@@ -18,6 +18,7 @@ const Index = () => {
     limit: TIMEFRAMES[0].limit,
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [chartType, setChartType] = useState<ChartType>("candles");
   const isMobile = useIsMobile();
 
   const { bars, loading: barsLoading, error: barsError } = useBars(symbol, tfState.tf, tfState.limit);
@@ -113,18 +114,40 @@ const Index = () => {
             {barsLoading && <span className="ml-2 text-dim-2">cargando…</span>}
             {barsError && <span className="ml-2 text-bear">{barsError.slice(0, 60)}</span>}
           </div>
-          <div className="absolute top-2 right-3 z-10 flex items-center gap-3 font-mono text-[9px] tracking-[0.08em] uppercase pointer-events-none">
-            <span className="flex items-center gap-1.5">
+          <div className="absolute top-2 right-3 z-10 flex items-center gap-3 font-mono text-[9px] tracking-[0.08em] uppercase">
+            <span className="flex items-center gap-1.5 pointer-events-none">
               <span className="w-2.5 h-0.5" style={{ background: "#5fb8ff" }} /> Sup
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 pointer-events-none">
               <span className="w-2.5 h-0.5" style={{ background: "#ff9a3c" }} /> Media
             </span>
-            <span className="flex items-center gap-1.5">
+            <span className="flex items-center gap-1.5 pointer-events-none">
               <span className="w-2.5 h-0.5" style={{ background: "#5fb8ff" }} /> Inf
             </span>
+            <div className="ml-2 flex border border-border rounded overflow-hidden">
+              <button
+                onClick={() => setChartType("candles")}
+                className={cn(
+                  "px-2 py-0.5 transition-colors",
+                  chartType === "candles" ? "bg-foreground/10 text-foreground" : "text-dim hover:text-foreground"
+                )}
+                aria-label="Velas"
+              >
+                Velas
+              </button>
+              <button
+                onClick={() => setChartType("line")}
+                className={cn(
+                  "px-2 py-0.5 transition-colors border-l border-border",
+                  chartType === "line" ? "bg-foreground/10 text-foreground" : "text-dim hover:text-foreground"
+                )}
+                aria-label="Línea"
+              >
+                Línea
+              </button>
+            </div>
           </div>
-          <PriceChart bars={bars} signals={signals} />
+          <PriceChart bars={bars} signals={signals} chartType={chartType} />
         </div>
 
         <SignalsTable signals={signals} bars={bars} loading={sigLoading} error={sigError} />
