@@ -65,8 +65,10 @@ Deno.serve(async (req) => {
     // Calcular rango de fechas según timeframe (Alpaca free/IEX requiere start)
     // El feed IEX gratuito tiene un retraso de ~15 min, así que usamos `end` = ahora - 16min
     const tfDays: Record<string, number> = {
+      "1Sec": 2,
       "1Min": 5,
       "5Min": 15,
+      "10Min": 20,
       "15Min": 30,
       "1Hour": 90,
       "1Day": 365 * 2,
@@ -77,7 +79,8 @@ Deno.serve(async (req) => {
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();
     const start = new Date(Date.now() - daysBack * 24 * 60 * 60 * 1000).toISOString();
 
-    const target = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${encodeURIComponent(timeframe)}&limit=${limit}&feed=iex&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&adjustment=raw&sort=desc`;
+    const upstreamTf = TF_UPSTREAM[timeframe] ?? timeframe;
+    const target = `https://data.alpaca.markets/v2/stocks/${encodeURIComponent(symbol)}/bars?timeframe=${encodeURIComponent(upstreamTf)}&limit=${limit}&feed=iex&start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&adjustment=raw&sort=desc`;
 
     const upstream = await fetch(target, {
       headers: {
