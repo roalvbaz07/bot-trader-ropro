@@ -8,9 +8,8 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const ALLOWED_TF = new Set(["1Sec", "1Min", "5Min", "10Min", "15Min", "1Hour", "1Day", "1Week", "1Month"]);
-// Alpaca no soporta segundos en feed IEX gratuito → mapeamos 1Sec a 1Min upstream.
-const TF_UPSTREAM: Record<string, string> = { "1Sec": "1Min" };
+const ALLOWED_TF = new Set(["10Min", "30Min", "1Hour"]);
+const TF_UPSTREAM: Record<string, string> = {};
 const ALLOWED_SYMBOL = /^[A-Z.\-]{1,8}$/;
 
 interface ReqBody {
@@ -65,15 +64,9 @@ Deno.serve(async (req) => {
     // Calcular rango de fechas según timeframe (Alpaca free/IEX requiere start)
     // El feed IEX gratuito tiene un retraso de ~15 min, así que usamos `end` = ahora - 16min
     const tfDays: Record<string, number> = {
-      "1Sec": 2,
-      "1Min": 5,
-      "5Min": 15,
       "10Min": 20,
-      "15Min": 30,
+      "30Min": 45,
       "1Hour": 90,
-      "1Day": 365 * 2,
-      "1Week": 365 * 5,
-      "1Month": 365 * 15,
     };
     const daysBack = tfDays[timeframe] ?? 30;
     const end = new Date(Date.now() - 16 * 60 * 1000).toISOString();

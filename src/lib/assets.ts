@@ -51,7 +51,7 @@ export const ASSETS: AssetDef[] = [
   { symbol: "WMT", name: "Walmart", category: "Consumo" },
 ];
 
-export type Timeframe = "1Sec" | "1Min" | "10Min" | "1Hour";
+export type Timeframe = "10Min" | "30Min" | "1Hour";
 
 export interface TimeframeDef {
   tf: Timeframe;
@@ -60,10 +60,9 @@ export interface TimeframeDef {
 }
 
 export const TIMEFRAMES: TimeframeDef[] = [
-  { tf: "1Sec", label: "1 s", limit: 200 },
-  { tf: "1Min", label: "1 min", limit: 200 },
   { tf: "10Min", label: "10 min", limit: 200 },
-  { tf: "1Hour", label: "1 h", limit: 200 },
+  { tf: "30Min", label: "30 min", limit: 200 },
+  { tf: "1Hour", label: "1 hora", limit: 200 },
 ];
 
 /**
