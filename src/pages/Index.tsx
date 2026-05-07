@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, SlidersHorizontal } from "lucide-react";
 import { Sidebar } from "@/components/trader/Sidebar";
 import { Topbar } from "@/components/trader/Topbar";
 import { PriceChart, type ChartType } from "@/components/trader/PriceChart";
 import { SignalsTable } from "@/components/trader/SignalsTable";
 import { ASSETS, TIMEFRAMES, type Timeframe } from "@/lib/assets";
+import { INDICATORS, type IndicatorId } from "@/lib/indicators";
 import { useBars } from "@/hooks/useBars";
 import { useSignals } from "@/hooks/useSignals";
 import { useAllSignalsStats } from "@/hooks/useAllSignals";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
@@ -19,7 +22,14 @@ const Index = () => {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("candles");
+  const [activeIndicators, setActiveIndicators] = useState<IndicatorId[]>(["bb"]);
   const isMobile = useIsMobile();
+
+  const toggleIndicator = (id: IndicatorId) => {
+    setActiveIndicators((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   const { bars, loading: barsLoading, error: barsError } = useBars(symbol, tfState.tf, tfState.limit);
   const { signals, loading: sigLoading, error: sigError } = useSignals(symbol);
@@ -146,8 +156,43 @@ const Index = () => {
                 Línea
               </button>
             </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <button
+                  className="ml-1 flex items-center gap-1 px-2 py-0.5 border border-border rounded text-dim hover:text-foreground transition-colors pointer-events-auto"
+                  aria-label="Indicadores"
+                >
+                  <SlidersHorizontal className="h-3 w-3" />
+                  <span>Indic.</span>
+                </button>
+              </PopoverTrigger>
+              <PopoverContent align="end" className="w-56 p-2 bg-surface border-border">
+                <div className="font-mono text-[10px] uppercase tracking-[0.1em] text-dim mb-2 px-1">
+                  Indicadores
+                </div>
+                <div className="flex flex-col gap-1">
+                  {INDICATORS.map((ind) => {
+                    const checked = activeIndicators.includes(ind.id);
+                    return (
+                      <label
+                        key={ind.id}
+                        className="flex items-center gap-2 px-1 py-1 rounded hover:bg-foreground/5 cursor-pointer"
+                      >
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleIndicator(ind.id)}
+                        />
+                        <span className="font-mono text-[11px] text-foreground normal-case tracking-normal">
+                          {ind.label}
+                        </span>
+                      </label>
+                    );
+                  })}
+                </div>
+              </PopoverContent>
+            </Popover>
           </div>
-          <PriceChart bars={bars} signals={signals} chartType={chartType} />
+          <PriceChart bars={bars} signals={signals} chartType={chartType} indicators={activeIndicators} />
         </div>
 
         <SignalsTable signals={signals} bars={bars} loading={sigLoading} error={sigError} />

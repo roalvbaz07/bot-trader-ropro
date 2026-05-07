@@ -10,6 +10,8 @@ import {
 } from "lightweight-charts";
 import type { Bar } from "@/hooks/useBars";
 import type { SignalDoc } from "@/hooks/useSignals";
+import type { IndicatorId } from "@/lib/indicators";
+import { bollinger, sma, ema, vwap, rsi } from "@/lib/indicators";
 
 export type ChartType = "candles" | "line";
 
@@ -17,6 +19,7 @@ interface PriceChartProps {
   bars: Bar[];
   signals: SignalDoc[];
   chartType?: ChartType;
+  indicators?: IndicatorId[];
   onVisibleRangeChange?: (range: LogicalRange | null) => void;
   onChartReady?: (chart: IChartApi) => void;
 }
@@ -32,29 +35,38 @@ const COLORS = {
   bbBand: "#5fb8ff",
   bbBandFill: "rgba(95,184,255,0.12)",
   bbMiddle: "#ff9a3c",
+  sma20: "#ffd166",
+  sma50: "#f78ca0",
+  ema20: "#a0e7e5",
+  ema50: "#b8b3ff",
+  vwap: "#ff77e9",
+  rsi: "#ffa94d",
 };
 
-export function PriceChart({ bars, signals, chartType = "candles", onVisibleRangeChange, onChartReady }: PriceChartProps) {
+export function PriceChart({
+  bars,
+  signals,
+  chartType = "candles",
+  indicators = ["bb"],
+  onVisibleRangeChange,
+  onChartReady,
+}: PriceChartProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const lineRef = useRef<ISeriesApi<"Line"> | null>(null);
   const volumeRef = useRef<ISeriesApi<"Histogram"> | null>(null);
-  // Relleno: baseline entre lower y upper. Usamos una serie Baseline:
-  // - topValue = upper (azul translúcido encima de la base)
-  // - baseValue = lower (transparente debajo)
-  // Para hacerlo simple y compatible, usaremos dos series Area apiladas
-  // con priceScale propio invertido NO funciona bien; mejor:
-  // Pintamos un Area de "upper - lower" sobre un priceScale oculto.
-  // Solución limpia: usar una serie Area con value=upper y baseLineColor;
-  // pero lightweight-charts no soporta fill-between nativo.
-  // => Truco: dibujar Area con datos = upper, y otra Area con datos = lower
-  // del mismo color de fondo (#000) para "borrar" la parte inferior.
   const bbFillUpperRef = useRef<ISeriesApi<"Area"> | null>(null);
   const bbFillLowerRef = useRef<ISeriesApi<"Area"> | null>(null);
   const bbUpperRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbMiddleRef = useRef<ISeriesApi<"Line"> | null>(null);
   const bbLowerRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const sma20Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const sma50Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const ema20Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const ema50Ref = useRef<ISeriesApi<"Line"> | null>(null);
+  const vwapRef = useRef<ISeriesApi<"Line"> | null>(null);
+  const rsiRef = useRef<ISeriesApi<"Line"> | null>(null);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -75,7 +87,6 @@ export function PriceChart({ bars, signals, chartType = "candles", onVisibleRang
       autoSize: true,
     });
 
-    // Relleno azul desde upper hacia abajo, luego "tapamos" desde lower hacia abajo con color de fondo
     const bbFillUpper = chart.addAreaSeries({
       topColor: COLORS.bbBandFill,
       bottomColor: COLORS.bbBandFill,
@@ -123,30 +134,28 @@ export function PriceChart({ bars, signals, chartType = "candles", onVisibleRang
       scaleMargins: { top: 0.85, bottom: 0 },
     });
 
-    // Bollinger Bands líneas (encima del relleno)
-    const bbUpper = chart.addLineSeries({
-      color: COLORS.bbBand,
-      lineWidth: 2,
-      lineStyle: LineStyle.Solid,
-      priceLineVisible: false,
-      lastValueVisible: true,
-      crosshairMarkerVisible: false,
-    });
-    const bbMiddle = chart.addLineSeries({
-      color: COLORS.bbMiddle,
-      lineWidth: 2,
-      lineStyle: LineStyle.Solid,
-      priceLineVisible: false,
-      lastValueVisible: true,
-      crosshairMarkerVisible: false,
-    });
-    const bbLower = chart.addLineSeries({
-      color: COLORS.bbBand,
-      lineWidth: 2,
-      lineStyle: LineStyle.Solid,
-      priceLineVisible: false,
-      lastValueVisible: true,
-      crosshairMarkerVisible: false,
+    const mkLine = (color: string, width: 1 | 2 | 3 | 4 = 2, style = LineStyle.Solid, priceScaleId?: string) =>
+      chart.addLineSeries({
+        color,
+        lineWidth: width,
+        lineStyle: style,
+        priceLineVisible: false,
+        lastValueVisible: true,
+        crosshairMarkerVisible: false,
+        ...(priceScaleId ? { priceScaleId } : {}),
+      });
+
+    const bbUpper = mkLine(COLORS.bbBand, 2);
+    const bbMiddle = mkLine(COLORS.bbMiddle, 2);
+    const bbLower = mkLine(COLORS.bbBand, 2);
+    const sma20 = mkLine(COLORS.sma20, 1);
+    const sma50 = mkLine(COLORS.sma50, 1);
+    const ema20 = mkLine(COLORS.ema20, 1, LineStyle.Dashed);
+    const ema50 = mkLine(COLORS.ema50, 1, LineStyle.Dashed);
+    const vwapS = mkLine(COLORS.vwap, 1);
+    const rsiS = mkLine(COLORS.rsi, 1, LineStyle.Solid, "rsi");
+    chart.priceScale("rsi").applyOptions({
+      scaleMargins: { top: 0, bottom: 0.7 },
     });
 
     chartRef.current = chart;
@@ -158,6 +167,12 @@ export function PriceChart({ bars, signals, chartType = "candles", onVisibleRang
     bbUpperRef.current = bbUpper;
     bbMiddleRef.current = bbMiddle;
     bbLowerRef.current = bbLower;
+    sma20Ref.current = sma20;
+    sma50Ref.current = sma50;
+    ema20Ref.current = ema20;
+    ema50Ref.current = ema50;
+    vwapRef.current = vwapS;
+    rsiRef.current = rsiS;
     onChartReady?.(chart);
 
     const sub = chart.timeScale().subscribeVisibleLogicalRangeChange((range) => {
@@ -176,11 +191,17 @@ export function PriceChart({ bars, signals, chartType = "candles", onVisibleRang
       bbUpperRef.current = null;
       bbMiddleRef.current = null;
       bbLowerRef.current = null;
+      sma20Ref.current = null;
+      sma50Ref.current = null;
+      ema20Ref.current = null;
+      ema50Ref.current = null;
+      vwapRef.current = null;
+      rsiRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Toggle visibility based on chartType
+  // Toggle chart type
   useEffect(() => {
     candleRef.current?.applyOptions({ visible: chartType === "candles" });
     lineRef.current?.applyOptions({ visible: chartType === "line" });
@@ -211,43 +232,57 @@ export function PriceChart({ bars, signals, chartType = "candles", onVisibleRang
     chartRef.current?.timeScale().fitContent();
   }, [bars]);
 
-  // Update Bollinger Bands from signals
+  // Compute & apply indicators from bars (no Firestore dependency)
   useEffect(() => {
-    if (!bbUpperRef.current || !bbMiddleRef.current || !bbLowerRef.current) return;
+    if (!bars.length) return;
+    const has = (id: IndicatorId) => indicators.includes(id);
 
-    const upMap = new Map<number, number>();
-    const midMap = new Map<number, number>();
-    const lowMap = new Map<number, number>();
+    // Bollinger
+    if (has("bb")) {
+      const { upper, middle, lower } = bollinger(bars, 20, 2);
+      const toData = (arr: { time: number; value: number }[]) =>
+        arr.map((p) => ({ time: p.time as Time, value: p.value }));
+      bbUpperRef.current?.setData(toData(upper));
+      bbMiddleRef.current?.setData(toData(middle));
+      bbLowerRef.current?.setData(toData(lower));
+      bbFillUpperRef.current?.setData(toData(upper));
+      bbFillLowerRef.current?.setData(toData(lower));
+      bbUpperRef.current?.applyOptions({ visible: true });
+      bbMiddleRef.current?.applyOptions({ visible: true });
+      bbLowerRef.current?.applyOptions({ visible: true });
+      bbFillUpperRef.current?.applyOptions({ visible: true });
+      bbFillLowerRef.current?.applyOptions({ visible: true });
+    } else {
+      bbUpperRef.current?.applyOptions({ visible: false });
+      bbMiddleRef.current?.applyOptions({ visible: false });
+      bbLowerRef.current?.applyOptions({ visible: false });
+      bbFillUpperRef.current?.applyOptions({ visible: false });
+      bbFillLowerRef.current?.applyOptions({ visible: false });
+    }
 
-    signals.forEach((s) => {
-      const t = Math.floor(s.dateMs / 1000);
-      const up = parseFloat(String(s.banda_superior));
-      const mid = parseFloat(String(s.banda_media));
-      const low = parseFloat(String(s.banda_inferior));
-      if (!isNaN(up)) upMap.set(t, up);
-      if (!isNaN(mid)) midMap.set(t, mid);
-      if (!isNaN(low)) lowMap.set(t, low);
-    });
+    const apply = (
+      ref: React.MutableRefObject<ISeriesApi<"Line"> | null>,
+      visible: boolean,
+      data: { time: number; value: number }[],
+    ) => {
+      if (!ref.current) return;
+      if (visible) {
+        ref.current.setData(data.map((p) => ({ time: p.time as Time, value: p.value })));
+        ref.current.applyOptions({ visible: true });
+      } else {
+        ref.current.applyOptions({ visible: false });
+      }
+    };
 
-    const toSeries = (m: Map<number, number>) =>
-      Array.from(m.entries())
-        .sort((a, b) => a[0] - b[0])
-        .map(([t, value]) => ({ time: t as Time, value }));
+    apply(sma20Ref, has("sma20"), has("sma20") ? sma(bars, 20) : []);
+    apply(sma50Ref, has("sma50"), has("sma50") ? sma(bars, 50) : []);
+    apply(ema20Ref, has("ema20"), has("ema20") ? ema(bars, 20) : []);
+    apply(ema50Ref, has("ema50"), has("ema50") ? ema(bars, 50) : []);
+    apply(vwapRef, has("vwap"), has("vwap") ? vwap(bars) : []);
+    apply(rsiRef, has("rsi"), has("rsi") ? rsi(bars, 14) : []);
+  }, [bars, indicators]);
 
-    const upperData = toSeries(upMap);
-    const middleData = toSeries(midMap);
-    const lowerData = toSeries(lowMap);
-
-    bbUpperRef.current.setData(upperData);
-    bbMiddleRef.current.setData(middleData);
-    bbLowerRef.current.setData(lowerData);
-
-    // Relleno entre bandas: pintamos área hasta upper (azul) y "tapamos" hasta lower (negro)
-    bbFillUpperRef.current?.setData(upperData);
-    bbFillLowerRef.current?.setData(lowerData);
-  }, [signals]);
-
-  // Update markers from signals — sólo en velas (los markers de línea no se ven igual)
+  // Markers from signals
   useEffect(() => {
     if (!candleRef.current || !lineRef.current) return;
     const markers = signals
