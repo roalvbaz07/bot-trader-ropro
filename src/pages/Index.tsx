@@ -1,14 +1,17 @@
 import { useMemo, useState } from "react";
-import { Menu, X } from "lucide-react";
+import { Menu, X, SlidersHorizontal } from "lucide-react";
 import { Sidebar } from "@/components/trader/Sidebar";
 import { Topbar } from "@/components/trader/Topbar";
 import { PriceChart, type ChartType } from "@/components/trader/PriceChart";
 import { SignalsTable } from "@/components/trader/SignalsTable";
 import { ASSETS, TIMEFRAMES, type Timeframe } from "@/lib/assets";
+import { INDICATORS, type IndicatorId } from "@/lib/indicators";
 import { useBars } from "@/hooks/useBars";
 import { useSignals } from "@/hooks/useSignals";
 import { useAllSignalsStats } from "@/hooks/useAllSignals";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 const Index = () => {
