@@ -22,7 +22,14 @@ const Index = () => {
   });
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [chartType, setChartType] = useState<ChartType>("candles");
+  const [activeIndicators, setActiveIndicators] = useState<IndicatorId[]>(["bb"]);
   const isMobile = useIsMobile();
+
+  const toggleIndicator = (id: IndicatorId) => {
+    setActiveIndicators((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  };
 
   const { bars, loading: barsLoading, error: barsError } = useBars(symbol, tfState.tf, tfState.limit);
   const { signals, loading: sigLoading, error: sigError } = useSignals(symbol);
