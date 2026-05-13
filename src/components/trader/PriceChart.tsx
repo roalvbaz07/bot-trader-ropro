@@ -282,15 +282,23 @@ export function PriceChart({
     apply(rsiRef, has("rsi"), has("rsi") ? rsi(bars, 14) : []);
   }, [bars, indicators]);
 
-  // Markers from signals
+  // Markers from signals — only the latest BUY and latest SELL
   useEffect(() => {
     if (!candleRef.current || !lineRef.current) return;
-    const markers = signals
-      .filter((s) => s.señal === "COMPRAR" || s.señal === "VENDER")
+
+    const latestBuy = signals
+      .filter((s) => s.señal === "COMPRAR")
+      .sort((a, b) => b.dateMs - a.dateMs)[0];
+    const latestSell = signals
+      .filter((s) => s.señal === "VENDER")
+      .sort((a, b) => b.dateMs - a.dateMs)[0];
+
+    const markers = [latestBuy, latestSell]
+      .filter(Boolean)
       .map((s) => {
-        const isBuy = s.señal === "COMPRAR";
+        const isBuy = s!.señal === "COMPRAR";
         return {
-          time: (s.dateMs / 1000) as Time,
+          time: (s!.dateMs / 1000) as Time,
           position: (isBuy ? "belowBar" : "aboveBar") as "belowBar" | "aboveBar",
           color: isBuy ? COLORS.bull : COLORS.bear,
           shape: (isBuy ? "arrowUp" : "arrowDown") as "arrowUp" | "arrowDown",
@@ -298,6 +306,7 @@ export function PriceChart({
         };
       })
       .sort((a, b) => (a.time as number) - (b.time as number));
+
     candleRef.current.setMarkers(markers);
     lineRef.current.setMarkers(markers);
   }, [signals]);
